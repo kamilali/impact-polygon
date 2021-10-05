@@ -39,3 +39,7 @@ node_modules
 #Hardhat files
 cache
 artifacts
+
+# hidden files
+.secret
+.credentials
