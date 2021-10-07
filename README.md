@@ -1,9 +1,21 @@
-# Basic Sample Hardhat Project
+# Impact (Polygon)
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
+To run the test node:
+```shell
+npx hardhat node
+```
 
-Try running some of the following tasks:
+To deploy contracts (specify network):
+```shell
+npx hardhat run scripts/deploy.js --network <network - e.g. localhost>
+```
 
+To run test app:
+```shell
+npm run dev
+```
+
+Other useful commands:
 ```shell
 npx hardhat accounts
 npx hardhat compile
