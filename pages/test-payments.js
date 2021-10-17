@@ -3,18 +3,19 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Web3Modal from "web3modal";
 const Web3 = require("web3");
-const { RelayProvider } = require('@opengsn/provider');
+const { RelayProvider } = require('@opengsn/gsn');
 
 import { impactPaymentAddress, impactPaymasterAddress } from "../config";
 
 import ImpactPayment from '../artifacts/contracts/ImpactPayment.sol/ImpactPayment.json';
+import ImpactPaymaster from '../artifacts/contracts/ImpactPaymaster.sol/ImpactPaymaster.json';
 
 const daiTokenAddress = "0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa";
 
 const WEB3_PROVIDER = 'https://rinkeby.infura.io/v3/959dde76f6ab4023870800531d390fc6';
 
 const config = { 
-    impactPaymasterAddress,
+    paymasterAddress: impactPaymasterAddress,
     loggerConfiguration: {
         logLevel: 'debug',
         // loggerUrl: 'logger.opengsn.org',
@@ -32,13 +33,16 @@ async function payDaiTest() {
     const provider = new ethers.providers.Web3Provider(connection);
     const signer = provider.getSigner();
     const paymentContractSigned = new ethers.Contract(impactPaymentAddress, ImpactPayment.abi, signer);
+    const paymasterContractSigned = new ethers.Contract(impactPaymasterAddress, ImpactPaymaster.abi, signer);
     const fromAddress = await signer.getAddress();
     console.log(fromAddress);
+
+    // paymasterContractSigned._depositProceedsToHubPublic("100000000000000000");
 
     // await paymentContract.methods.testContractFunction(100).send({ from: fromAddress });
 
     // call permit to allow access for impact payment contract
-    const gsnProvider = await RelayProvider.newProvider({ provider: new Web3.providers.HttpProvider(WEB3_PROVIDER), config }).init()
+    const gsnProvider = await RelayProvider.newProvider({ provider: window.ethereum, config }).init()
     const web3 = new Web3(gsnProvider);
     const paymentContract = new web3.eth.Contract(ImpactPayment.abi, impactPaymentAddress);
 
@@ -46,7 +50,8 @@ async function payDaiTest() {
     console.log(signedData);
     await paymentContract.methods.permitContractWithdrawals(
         daiTokenAddress,signedData.holder, signedData.spender, signedData.nonce,
-        signedData.expiry, signedData.allowed, signedData.v, signedData.r, signedData.s).send({ from: fromAddress });
+        signedData.expiry, signedData.allowed, signedData.v, signedData.r, signedData.s).send({ from: fromAddress, gas: 1500000 });
+    // await paymentContract.methods.testContractFunction(10).send({ from: fromAddress, gas: 1500000 });
 
     // const paymentContract = new ethers.Contract(impactPaymentAddress, ImpactPayment.abi, signer);
     // let daiAmount = ethers.utils.formatUnits(0.01, 'ether');

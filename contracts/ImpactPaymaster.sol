@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "@opengsn/contracts/src/forwarder/IForwarder.sol";
+import "@opengsn/contracts/src/interfaces/IRelayHub.sol";
 import "@opengsn/contracts/src/BasePaymaster.sol";
 
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
@@ -41,12 +42,14 @@ contract ImpactPaymaster is BasePaymaster {
 
     uint public gasUsedByPost;
 
-    constructor(address[] memory _tokens, address swapRouterAddress) {
+    constructor(address[] memory _tokens, address swapRouterAddress, address forwarder, address relayHub) {
         swapRouter = ISwapRouter(swapRouterAddress);
         for (uint256 i = 0; i < _tokens.length; i++){
             supportedTokens[_tokens[i]] = true;
             tokens.push(_tokens[i]);
             // tokens[i].approve(address(UniswapV2Router02), type(uint256).max);
+            setTrustedForwarder(IForwarder(forwarder));
+            setRelayHub(IRelayHub(relayHub));
         }
     }
 
@@ -161,6 +164,11 @@ contract ImpactPaymaster is BasePaymaster {
         swapExactETHOutputSingle(tokenAddress, ethActualCharge, type(uint256).max);
         // uniswap.tokenToEthSwapOutput(ethActualCharge, type(uint256).max, block.timestamp+60*15);
         relayHub.depositFor{value:ethActualCharge}(address(this));
+    }
+    
+    function _depositProceedsToHubPublic(uint256 ethAmount) public {
+        // uniswap.tokenToEthSwapOutput(ethActualCharge, type(uint256).max, block.timestamp+60*15);
+        relayHub.depositFor{value:ethAmount}(address(this));
     }
 
     event TokensCharged(uint gasUseWithoutPost, uint gasJustPost, uint ethActualCharge, uint tokenActualCharge);

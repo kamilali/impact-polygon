@@ -12,11 +12,14 @@ async function main() {
   console.log("Impact Payment contract deployed to:", impactPayment.address);
   
   const ImpactPaymaster = await hre.ethers.getContractFactory("ImpactPaymaster");
-  const impactPaymaster = await ImpactPaymaster.deploy(tokenAddresses, swapRouterAddress);
-  const paymasterInstance = await impactPaymaster.deployed();
-  paymasterInstance.setTrustedForwarder(forwarderAddress);
-  paymasterInstance.setRelayHub(relayHubAddress);
+  const impactPaymaster = await ImpactPaymaster.deploy(tokenAddresses, swapRouterAddress, forwarderAddress, relayHubAddress);
+  await impactPaymaster.deployed();
   console.log("Impact Paymaster contract deployed to:", impactPaymaster.address);
+
+  const [deployerAddress, _] = await ethers.getSigners(); 
+  currHubAddr = await impactPaymaster.connect(deployerAddress).getHubAddr();
+  currTrustedForwarder = await impactPaymaster.connect(deployerAddress).trustedForwarder();
+  console.log(currHubAddr, currTrustedForwarder);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
