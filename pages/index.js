@@ -18,7 +18,9 @@ export default function Home() {
 
   async function loadUnsoldNFTs() {
     setLoadingState(true);
-    const provider = new ethers.providers.JsonRpcProvider();
+    const web3Modal = new Web3Modal();
+    const connection = await web3Modal.connect();
+    const provider = new ethers.providers.Web3Provider(connection);
     const tokenContract = new ethers.Contract(impactNFTAddress, ImpactNFT.abi, provider);
     const marketContract = new ethers.Contract(impactMarketAddress, ImpactMarket.abi, provider);
     const data = await marketContract.fetchMarketItems();

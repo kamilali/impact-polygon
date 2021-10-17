@@ -12,6 +12,7 @@ const ipfsClient = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0');
 export default function CreateItem() {
     const [fileUrl, setFileUrl] = useState(null);
     const [formInput, updateFormInput] = useState({price: '', name: '', description: ''});
+    const [creating, setCreating] = useState(false);
     const router = useRouter();
 
     async function onFileChange(e) {
@@ -31,6 +32,7 @@ export default function CreateItem() {
     }
 
     async function createItem() {
+        setCreating(true);
         const { name, description, price } = formInput;
         if (!name || !description || !price || !fileUrl) {
             return;
@@ -42,10 +44,13 @@ export default function CreateItem() {
         try {
             const dataAdded = await ipfsClient.add(data);
             const url = `https://ipfs.infura.io/ipfs/${dataAdded.path}`;
-            createSale(url);
+            console.log("file added to ipfs:", url);
+            await createSale(url);
+            console.log("Created sale");
         } catch (error) {
             console.log('Error uploading file: ', error);
         }
+        setCreating(false);
     }
 
     async function createSale(url) {
@@ -57,6 +62,7 @@ export default function CreateItem() {
         const impactNFTContract = new ethers.Contract(impactNFTAddress, ImpactNFT.abi, signer);
         let transaction = await impactNFTContract.createToken(url);
         let tx = await transaction.wait();
+        console.log("first tx");
 
         let event = tx.events[0];
         let value = event.args[2];
@@ -70,6 +76,7 @@ export default function CreateItem() {
 
         transaction = await impactMarketContract.createMarketItem(impactNFTAddress, tokenId, price, { value: listingPrice });
         tx = await transaction.wait();
+        console.log("second tx");
         router.push('/');
     }
 
@@ -100,6 +107,7 @@ export default function CreateItem() {
                 { fileUrl && (<img className="rounded mt-4" width="350" src={fileUrl} />)}
                 <button
                     onClick={createItem}
+                    disabled={creating}
                     className="font-bold mt-4 bg-pink-500 text-white rounded p-4 shadow-lg"
                 >
                     Create Impact Artwork

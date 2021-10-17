@@ -12,10 +12,28 @@ module.exports = {
       url: `https://polygon-mumbai.infura.io/v3/${projectId}`,
       accounts: [privateKey]
     },
-    mainnet: {
+    poly_mainnet: {
       url: `https://polygon-mainnet.infura.io/v3/${projectId}`,
+      accounts: [privateKey]
+    },
+    eth_mainnet: {
+      url: `https://mainnet.infura.io/v3/${projectId}`,
+      accounts: [privateKey]
+    },
+    kovan: {
+      url: `https://kovan.infura.io/v3/${projectId}`,
+      accounts: [privateKey]
+    },
+    rinkeby: {
+      url: `https://rinkeby.infura.io/v3/${projectId}`,
       accounts: [privateKey]
     }
   },
-  solidity: "0.8.4",
+  solidity: {
+    compilers: [
+      {
+        version: "0.8.4"
+      }
+    ]
+  },
 };

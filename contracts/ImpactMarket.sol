@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract ImpactMarket is ReentrancyGuard {
+    
     using Counters for Counters.Counter;
     Counters.Counter private _itemIds;
     Counters.Counter private _itemsSold;
@@ -37,7 +38,7 @@ contract ImpactMarket is ReentrancyGuard {
     constructor () {
         owner = payable(msg.sender);
     }
-
+    
     function getListingPrice() public view returns (uint256) {
         return listingPrice;
     }
