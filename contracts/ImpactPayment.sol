@@ -20,10 +20,13 @@ contract ImpactPayment is Ownable {
     struct ImpactCampaign {
         uint256 id;
         address campaignOwner;
+        string campaignName;
         string ownerName;
     }
 
     mapping(address => bool) public tokens_allowed;
+    address private _baseTokenAddress;
+    
     mapping(address => uint256) public deposits; // total deposited funds for a user
 
     mapping(uint256 => mapping(address => uint256)) public campaignDeposits; // total deposited funds for a user
@@ -31,14 +34,15 @@ contract ImpactPayment is Ownable {
     mapping(uint256 => ImpactCampaign) public idToImpactCampaign; // impact campaigns that are launched
     mapping(address => uint256[]) public userToImpactCampaignIds;
 
-    event CampaignCreated(uint256 id, address campaignOwner, string ownerName);
+    event CampaignCreated(uint256 indexed id, address campaignOwner, string campaignName, string ownerName);
     event Deposit(address indexed sender, uint256 amount, uint256 campaignId);
     event Withdraw(address indexed recipient, uint256 amount, uint256 campaignId);
     
-    constructor(address[] memory token_addresses) {
-        for(uint256 i = 0; i < token_addresses.length; i++) {
-            tokens_allowed[token_addresses[i]] = true;
+    constructor(address[] memory tokenAddresses, address baseTokenAddress) {
+        for(uint256 i = 0; i < tokenAddresses.length; i++) {
+            tokens_allowed[tokenAddresses[i]] = true;
         }
+        _baseTokenAddress = baseTokenAddress;
     }
     
     function getCampaignFunds(uint256 campaignId) public view returns (uint256) {
@@ -71,15 +75,27 @@ contract ImpactPayment is Ownable {
         return impactCampaigns;
     }
     
-    function createCampaign(address campaignOwner, string memory ownerName) public onlyOwner {
+    function createCampaign(address campaignOwner, string memory campaignName, string memory ownerName) public onlyOwner {
         _campaignIds.increment();
         uint256 campaignId = _campaignIds.current();
         idToImpactCampaign[campaignId] = ImpactCampaign(
             campaignId,
             campaignOwner,
+            campaignName,
             ownerName
         );
-        emit CampaignCreated(campaignId, campaignOwner, ownerName);
+        emit CampaignCreated(campaignId, campaignOwner, campaignName, ownerName);
+    }
+
+    function withdrawFunds(uint256 campaignId, uint256 amount) public onlyOwner {
+        require(ERC20(_baseTokenAddress).balanceOf(address(this)) >= amount,
+                "There are not sufficient funds for this withdrawal");
+        require(campaignFunds[campaignId] >= amount,
+                "This campaign does not have sufficient funds for this withdrawal");
+        address campaignOwner = idToImpactCampaign[campaignId].campaignOwner;
+        ERC20(_baseTokenAddress).transfer(campaignOwner, amount);
+        campaignFunds[campaignId] -= amount;
+        emit Withdraw(campaignOwner, amount, campaignId);
     }
 
     function depositFunds(address tokenAddress, uint256 amount, uint256 campaignId) public {
@@ -87,11 +103,12 @@ contract ImpactPayment is Ownable {
         require(ERC20(tokenAddress).balanceOf(msg.sender) >= amount, 
                 "You do not have sufficient funds to make this purchase");
         ERC20(tokenAddress).transferFrom(msg.sender, address(this), amount);
-        emit Deposit(msg.sender, amount, campaignId);
         deposits[msg.sender] += amount;
+        userToImpactCampaignIds[msg.sender].push(campaignId);
         campaignDeposits[campaignId][msg.sender] += amount;
         campaignFunds[campaignId] += amount;
         total_transactions++;
+        emit Deposit(msg.sender, amount, campaignId);
     }
     
     function allowTokenDeposits(address tokenAddress) public onlyOwner {

@@ -12,7 +12,8 @@ contract ImpactMarket is ReentrancyGuard {
     Counters.Counter private _itemsSold;
     
     struct MarketItem {
-        uint itemId;
+        uint256 itemId;
+        uint256 campaignId;
         address nftContract;
         uint256 tokenId;
         address payable seller;
@@ -22,7 +23,8 @@ contract ImpactMarket is ReentrancyGuard {
     }
 
     event MarketItemCreated(
-        uint indexed itemId,
+        uint256 indexed itemId,
+        uint256 campaignId,
         address indexed nftContract,
         uint256 indexed tokenId,
         address seller,
@@ -43,7 +45,7 @@ contract ImpactMarket is ReentrancyGuard {
         return listingPrice;
     }
 
-    function createMarketItem(address nftContract, uint256 tokenId, uint256 price) public payable nonReentrant {
+    function createMarketItem(address nftContract, uint256 tokenId, uint256 price, uint256 campaignId) public payable nonReentrant {
         require(price > 0, "Price must be at least 1 wei");
         require(msg.value == listingPrice, "Price must be equal to the required listing price");
 
@@ -52,6 +54,7 @@ contract ImpactMarket is ReentrancyGuard {
 
         idToMarketItem[itemId] = MarketItem(
             itemId,
+            campaignId,
             nftContract,
             tokenId,
             payable(msg.sender),
@@ -61,13 +64,12 @@ contract ImpactMarket is ReentrancyGuard {
         );
 
         IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
-
-        emit MarketItemCreated(itemId, nftContract, tokenId, msg.sender, address(0), price, false);
+        emit MarketItemCreated(itemId, campaignId, nftContract, tokenId, msg.sender, address(0), price, false);
     }
 
     function createMarketSale(address nftContract, uint256 itemId) public payable nonReentrant {
-        uint price = idToMarketItem[itemId].price;
-        uint tokenId = idToMarketItem[itemId].tokenId;
+        uint256 price = idToMarketItem[itemId].price;
+        uint256 tokenId = idToMarketItem[itemId].tokenId;
 
         require(msg.value == price, "Value sent must be equal to the asking price");
 
@@ -80,13 +82,30 @@ contract ImpactMarket is ReentrancyGuard {
         payable(owner).transfer(listingPrice);
     }
 
-    function fetchMarketItems() public view returns (MarketItem[] memory) {
-        uint itemCount = _itemIds.current();
-        uint unsoldItemCount = _itemIds.current() - _itemsSold.current();
+    function fetchMarketItemsForCampaign(uint256 campaignId) public view returns (MarketItem[] memory) {
+        uint256 itemCount = _itemIds.current();
+        uint256 unsoldItemCount = _itemIds.current() - _itemsSold.current();
         MarketItem[] memory unsoldItems = new MarketItem[](unsoldItemCount);
-        uint currIdx = 0;
+        uint256 currIdx = 0;
 
-        for(uint i = 0; i < itemCount; i++) {
+        for(uint256 i = 0; i < itemCount; i++) {
+            if((idToMarketItem[i+1].owner == address(0)) && 
+               (idToMarketItem[i+1].campaignId == campaignId)) {
+                MarketItem storage currentMarketItem = idToMarketItem[i+1];
+                unsoldItems[currIdx] = currentMarketItem;
+                currIdx += 1;
+            }
+        }
+        return unsoldItems;
+    }
+
+    function fetchMarketItems() public view returns (MarketItem[] memory) {
+        uint256 itemCount = _itemIds.current();
+        uint256 unsoldItemCount = _itemIds.current() - _itemsSold.current();
+        MarketItem[] memory unsoldItems = new MarketItem[](unsoldItemCount);
+        uint256 currIdx = 0;
+
+        for(uint256 i = 0; i < itemCount; i++) {
             if(idToMarketItem[i+1].owner == address(0)) {
                 MarketItem storage currentMarketItem = idToMarketItem[i+1];
                 unsoldItems[currIdx] = currentMarketItem;
@@ -98,11 +117,11 @@ contract ImpactMarket is ReentrancyGuard {
 
     // TODO: optimize this (have a mapping that stores user counts so don't have to loop to find out)
     function fetchUserOwnedNFTs() public view returns (MarketItem[] memory) {
-        uint itemCount = _itemIds.current();
-        uint userItemCount = 0;
-        uint currIdx = 0;
+        uint256 itemCount = _itemIds.current();
+        uint256 userItemCount = 0;
+        uint256 currIdx = 0;
 
-        for(uint i = 0; i < itemCount; i++) {
+        for(uint256 i = 0; i < itemCount; i++) {
             if(idToMarketItem[i+1].owner == msg.sender) {
                 userItemCount += 1;
             }
@@ -110,7 +129,7 @@ contract ImpactMarket is ReentrancyGuard {
 
         MarketItem[] memory userItems = new MarketItem[](userItemCount);
 
-        for(uint i = 0; i < itemCount; i++) {
+        for(uint256 i = 0; i < itemCount; i++) {
             if(idToMarketItem[i+1].owner == msg.sender) {
                 MarketItem storage currentMarketItem = idToMarketItem[i+1];
                 userItems[currIdx] = currentMarketItem;
@@ -121,11 +140,11 @@ contract ImpactMarket is ReentrancyGuard {
     }
     
     function fetchUserCreatedNFTs() public view returns (MarketItem[] memory) {
-        uint itemCount = _itemIds.current();
-        uint userItemCount = 0;
-        uint currIdx = 0;
+        uint256 itemCount = _itemIds.current();
+        uint256 userItemCount = 0;
+        uint256 currIdx = 0;
 
-        for(uint i = 0; i < itemCount; i++) {
+        for(uint256 i = 0; i < itemCount; i++) {
             if(idToMarketItem[i+1].seller == msg.sender) {
                 userItemCount += 1;
             }
@@ -133,7 +152,7 @@ contract ImpactMarket is ReentrancyGuard {
 
         MarketItem[] memory userItems = new MarketItem[](userItemCount);
 
-        for(uint i = 0; i < itemCount; i++) {
+        for(uint256 i = 0; i < itemCount; i++) {
             if(idToMarketItem[i+1].seller == msg.sender) {
                 MarketItem storage currentMarketItem = idToMarketItem[i+1];
                 userItems[currIdx] = currentMarketItem;
