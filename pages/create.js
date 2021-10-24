@@ -73,8 +73,9 @@ export default function CreateItem() {
         const impactMarketContract = new ethers.Contract(impactMarketAddress, ImpactMarket.abi, signer);
         let listingPrice = await impactMarketContract.getListingPrice();
         listingPrice = listingPrice.toString();
+        let campaignId = 0; // this should be dynamic and state controlled
 
-        transaction = await impactMarketContract.createMarketItem(impactNFTAddress, tokenId, price, { value: listingPrice });
+        transaction = await impactMarketContract.createMarketItem(impactNFTAddress, tokenId, price, campaignId, { value: listingPrice });
         tx = await transaction.wait();
         console.log("second tx");
         router.push('/');
