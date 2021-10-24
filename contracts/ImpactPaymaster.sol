@@ -35,15 +35,16 @@ contract ImpactPaymaster is BasePaymaster {
     mapping (address=>bool) private supportedTokens;
 
     ISwapRouter public immutable swapRouter;
-    address public constant WETH9 = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address public WETH9;
     // pool fee set to 0.3%.
     uint24 public constant poolFee = 3000;
     uint32 private constant tickWindow = 100;
 
     uint public gasUsedByPost;
 
-    constructor(address[] memory _tokens, address swapRouterAddress, address forwarder, address relayHub) {
+    constructor(address[] memory _tokens, address wETH9Address, address swapRouterAddress, address forwarder, address relayHub) {
         swapRouter = ISwapRouter(swapRouterAddress);
+        WETH9 = wETH9Address;
         for (uint256 i = 0; i < _tokens.length; i++){
             supportedTokens[_tokens[i]] = true;
             tokens.push(_tokens[i]);
@@ -66,7 +67,7 @@ contract ImpactPaymaster is BasePaymaster {
     // for account-based target, this is the target account.
     function getPayer(GsnTypes.RelayRequest calldata relayRequest) public virtual view returns (address) {
         (this);
-        return relayRequest.request.to;
+        return relayRequest.request.from;
     }
 
     event Received(uint eth);
@@ -74,15 +75,13 @@ contract ImpactPaymaster is BasePaymaster {
         emit Received(msg.value);
     }
 
-    function _getToken(bytes memory paymasterData) internal view returns (address tokenAddress) {
+    function _getToken(bytes memory requestData) internal view returns (address tokenAddress) {
         //if no specific token specified, assume the first in the list.
-        if ( paymasterData.length==0 ) {
+        if (requestData.length==0) {
             return tokens[0];
         }
-
-        require(paymasterData.length==32, "invalid address in paymasterData");
-        tokenAddress = abi.decode(paymasterData, (address));
-        require(supportedTokens[tokenAddress], "unsupported token uniswap");
+        (tokenAddress) = abi.decode(requestData, (address));
+        require(supportedTokens[tokenAddress], "not a supported token");
     }
 
     function _calculatePreCharge(
@@ -113,7 +112,7 @@ contract ImpactPaymaster is BasePaymaster {
     relayHubOnly
     returns (bytes memory context, bool revertOnRecipientRevert) {
         (relayRequest, signature, approvalData, maxPossibleGas);
-        (address tokenAddress) = _getToken(relayRequest.relayData.paymasterData);
+        address tokenAddress = _getToken(relayRequest.request.data);
         (address payer, uint256 tokenPrecharge) = _calculatePreCharge(tokenAddress, relayRequest, maxPossibleGas);
         ERC20Permit(tokenAddress).transferFrom(payer, address(this), tokenPrecharge);
         return (abi.encode(payer, tokenPrecharge, tokenAddress), false);
@@ -166,11 +165,6 @@ contract ImpactPaymaster is BasePaymaster {
         relayHub.depositFor{value:ethActualCharge}(address(this));
     }
     
-    function _depositProceedsToHubPublic(uint256 ethAmount) public {
-        // uniswap.tokenToEthSwapOutput(ethActualCharge, type(uint256).max, block.timestamp+60*15);
-        relayHub.depositFor{value:ethAmount}(address(this));
-    }
-
     event TokensCharged(uint gasUseWithoutPost, uint gasJustPost, uint ethActualCharge, uint tokenActualCharge);
 
     /// UNISWAP HELPER METHODS

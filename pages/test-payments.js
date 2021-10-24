@@ -8,19 +8,31 @@ const { RelayProvider } = require('@opengsn/gsn');
 import { impactPaymentAddress, impactPaymasterAddress } from "../config";
 
 import ImpactPayment from '../artifacts/contracts/ImpactPayment.sol/ImpactPayment.json';
-import ImpactPaymaster from '../artifacts/contracts/ImpactPaymaster.sol/ImpactPaymaster.json';
+// import ImpactPaymaster from '../artifacts/contracts/ImpactPaymaster.sol/ImpactPaymaster.json';
 
-const daiTokenAddress = "0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa";
+const daiTokenAddress = "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa";
 
-const WEB3_PROVIDER = 'https://rinkeby.infura.io/v3/959dde76f6ab4023870800531d390fc6';
+const WEB3_PROVIDER = 'https://kovan.infura.io/v3/959dde76f6ab4023870800531d390fc6';
 
-const config = { 
-    paymasterAddress: impactPaymasterAddress,
-    loggerConfiguration: {
-        logLevel: 'debug',
-        // loggerUrl: 'logger.opengsn.org',
-    }
-}
+// const config = { 
+//     paymasterAddress: impactPaymasterAddress,
+//     loggerConfiguration: {
+//         logLevel: 'debug',
+//         // loggerUrl: 'logger.opengsn.org',
+//     }
+// }
+
+const DaiABI = [
+  // Some details about the token
+  "function name() view returns (string)",
+  "function symbol() view returns (string)",
+
+  // Get the account balance
+  "function balanceOf(address) view returns (uint)",
+
+  // approve function
+  "function approve(address usr, uint wad) external returns (bool)",
+]
 
 async function payDaiTest() {
     console.log("Testing DAI payments");
@@ -32,8 +44,8 @@ async function payDaiTest() {
     const connection = await web3Modal.connect();
     const provider = new ethers.providers.Web3Provider(connection);
     const signer = provider.getSigner();
-    const paymentContractSigned = new ethers.Contract(impactPaymentAddress, ImpactPayment.abi, signer);
-    const paymasterContractSigned = new ethers.Contract(impactPaymasterAddress, ImpactPaymaster.abi, signer);
+    // const paymentContractSigned = new ethers.Contract(impactPaymentAddress, ImpactPayment.abi, signer);
+    // const paymasterContractSigned = new ethers.Contract(impactPaymasterAddress, ImpactPaymaster.abi, signer);
     const fromAddress = await signer.getAddress();
     console.log(fromAddress);
 
@@ -42,21 +54,27 @@ async function payDaiTest() {
     // await paymentContract.methods.testContractFunction(100).send({ from: fromAddress });
 
     // call permit to allow access for impact payment contract
-    const gsnProvider = await RelayProvider.newProvider({ provider: window.ethereum, config }).init()
-    const web3 = new Web3(gsnProvider);
-    const paymentContract = new web3.eth.Contract(ImpactPayment.abi, impactPaymentAddress);
+    // const gsnProvider = await RelayProvider.newProvider({ provider: window.ethereum, config }).init();
+    // let newProvider = new ethers.providers.Web3Provider(gsnProvider);
+    // let newSigner = newProvider.getSigner();
+    const paymentContract = new ethers.Contract(impactPaymentAddress, ImpactPayment.abi, signer);
+    
+    // var signedData = await signTransferPermit(fromAddress, expiry, nonce, spender);
+    // console.log(signedData);
+    let daiAmount = "100000000000000000";
 
-    var signedData = await signTransferPermit(fromAddress, expiry, nonce, spender);
-    console.log(signedData);
-    await paymentContract.methods.permitContractWithdrawals(
-        daiTokenAddress,signedData.holder, signedData.spender, signedData.nonce,
-        signedData.expiry, signedData.allowed, signedData.v, signedData.r, signedData.s).send({ from: fromAddress, gas: 1500000 });
-    // await paymentContract.methods.testContractFunction(10).send({ from: fromAddress, gas: 1500000 });
+    // approve dai (non-gasless)
+    const daiContract = new ethers.Contract(daiTokenAddress, DaiABI, signer);
+    let transaction = await daiContract.approve(impactPaymentAddress, daiAmount);
+    let tx = await transaction.wait();
 
-    // const paymentContract = new ethers.Contract(impactPaymentAddress, ImpactPayment.abi, signer);
-    // let daiAmount = ethers.utils.formatUnits(0.01, 'ether');
-    // let transaction = await paymentContract.depositFunds(daiTokenAddress, daiAmount);
-    // tx = await transaction.wait();
+    // let transaction = await paymentContract.permitContractWithdrawals(
+    //     daiTokenAddress,signedData.holder, signedData.spender, signedData.nonce,
+    //     signedData.expiry, signedData.allowed, signedData.v, signedData.r, signedData.s);
+    // let tx = await transaction.wait();
+    
+    transaction = await paymentContract.depositFunds(daiTokenAddress, daiAmount);
+    tx = await transaction.wait();
 }
 
 export const signTransferPermit = async function (fromAddress, expiry, nonce, spender) {
@@ -148,8 +166,8 @@ const createPermitMessageData = function (fromAddress, spender, nonce, expiry) {
     domain: {
         name: "Dai Stablecoin",
         version: "1",
-        chainId: 4,
-        verifyingContract: "0xc7AD46e0b8a400Bb3C915120d284AafbA8fc4735",
+        chainId: 42,
+        verifyingContract: daiTokenAddress,
     },
     message: message,
     });
