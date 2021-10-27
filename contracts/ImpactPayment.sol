@@ -16,12 +16,19 @@ contract ImpactPayment is Ownable {
     
     uint public total_transactions = 0;
     Counters.Counter private _campaignIds;
+    Counters.Counter private _campaignsCompleted;
     
     struct ImpactCampaign {
         uint256 id;
         address campaignOwner;
         string campaignName;
         string ownerName;
+        bool complete;
+    }
+
+    struct Donation {
+        address donor;
+        uint256 donationAmount;
     }
 
     mapping(address => bool) public tokens_allowed;
@@ -33,6 +40,7 @@ contract ImpactPayment is Ownable {
     mapping(uint256 => uint256) public campaignFunds; // total funds of a campaign
     mapping(uint256 => ImpactCampaign) public idToImpactCampaign; // impact campaigns that are launched
     mapping(address => uint256[]) public userToImpactCampaignIds;
+    mapping(uint256 => address[]) public impactCampaignIdsToUsers;
 
     event CampaignCreated(uint256 indexed id, address campaignOwner, string campaignName, string ownerName);
     event Deposit(address indexed sender, uint256 amount, uint256 campaignId);
@@ -66,11 +74,45 @@ contract ImpactPayment is Ownable {
         return userDonatedCampaigns;
     }
 
+    function getUserDonationsToCampaign(uint256 campaignId) public view returns (Donation[] memory) {
+        address[] memory usersThatDonatedToCampaign = impactCampaignIdsToUsers[campaignId];
+        Donation[] memory userDonations = new Donation[](usersThatDonatedToCampaign.length);
+        for (uint256 i = 0; i < usersThatDonatedToCampaign.length; i++) {
+            userDonations[i] = Donation(
+                usersThatDonatedToCampaign[i],
+                campaignDeposits[campaignId][usersThatDonatedToCampaign[i]]
+            );
+        }
+        return userDonations;
+    }
+
     function getCampaigns() public view returns (ImpactCampaign[] memory) {
         uint256 campaignCount = _campaignIds.current();
         ImpactCampaign[] memory impactCampaigns = new ImpactCampaign[](campaignCount);
         for(uint256 i = 0; i < campaignCount; i++) {
             impactCampaigns[i] = idToImpactCampaign[i+1];
+        }
+        return impactCampaigns;
+    }
+    
+    function getActiveCampaigns() public view returns (ImpactCampaign[] memory) {
+        uint256 campaignCount = _campaignIds.current() - _campaignsCompleted.current();
+        ImpactCampaign[] memory impactCampaigns = new ImpactCampaign[](campaignCount);
+        for(uint256 i = 0; i < campaignCount; i++) {
+            if (!idToImpactCampaign[i+1].complete) {
+                impactCampaigns[i] = idToImpactCampaign[i+1];
+            }
+        }
+        return impactCampaigns;
+    }
+    
+    function getCompletedCampaigns() public view returns (ImpactCampaign[] memory) {
+        uint256 campaignCount = _campaignsCompleted.current();
+        ImpactCampaign[] memory impactCampaigns = new ImpactCampaign[](campaignCount);
+        for(uint256 i = 0; i < campaignCount; i++) {
+            if (idToImpactCampaign[i+1].complete) {
+                impactCampaigns[i] = idToImpactCampaign[i+1];
+            }
         }
         return impactCampaigns;
     }
@@ -82,9 +124,17 @@ contract ImpactPayment is Ownable {
             campaignId,
             campaignOwner,
             campaignName,
-            ownerName
+            ownerName,
+            false
         );
         emit CampaignCreated(campaignId, campaignOwner, campaignName, ownerName);
+    }
+
+    function endCampaign(uint256 campaignId) public onlyOwner {
+        require(campaignId < _campaignIds.current(), "Invalid campaign id");
+        ImpactCampaign storage currCampaign = idToImpactCampaign[campaignId];
+        currCampaign.complete = true;
+        _campaignsCompleted.increment();
     }
 
     function withdrawFunds(uint256 campaignId, uint256 amount) public onlyOwner {
@@ -105,6 +155,7 @@ contract ImpactPayment is Ownable {
         ERC20(tokenAddress).transferFrom(msg.sender, address(this), amount);
         deposits[msg.sender] += amount;
         userToImpactCampaignIds[msg.sender].push(campaignId);
+        impactCampaignIdsToUsers[campaignId].push(msg.sender);
         campaignDeposits[campaignId][msg.sender] += amount;
         campaignFunds[campaignId] += amount;
         total_transactions++;
