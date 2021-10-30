@@ -23,16 +23,18 @@ contract ImpactNFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausable 
     string public baseTokenURI;                     // Base token URI of collection.. should be ipfs://{HASH}/
     string public hiddenURI;                        // Token URI of hidden object
     bool public isRevealed = false;                 // Determines if the token is revealed
-
+    
+    address private marketplaceContract;
     address private withdrawAllAddress;
 
     event CreateImpactToken(uint256 indexed id);
     
-    constructor(string memory baseURI, string memory __hiddenURI, address _withdrawAllAddress) ERC721("ImpactNFT", "IMPACT") {
+    constructor(string memory baseURI, string memory __hiddenURI, address _withdrawAllAddress, address _marketplaceContract) ERC721("ImpactNFT", "IMPACT") {
         _pause();
         setBaseURI(baseURI);
         setHiddenURI(__hiddenURI);
         setWithdrawAllAddress(_withdrawAllAddress);
+        marketplaceContract = _marketplaceContract;
     }
 
     modifier saleIsOpen {
@@ -41,6 +43,11 @@ contract ImpactNFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausable 
 
         // If someone NOT the owner and is interacting with the contract, require that the contract is not paused
         if (_msgSender() != owner()) require(!paused(), "Pausable: paused");
+        _;
+    }
+
+    modifier allowedMinters {
+        require(_msgSender() == owner() || _msgSender() == marketplaceContract);
         _;
     }
 
@@ -58,7 +65,16 @@ contract ImpactNFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausable 
             _mintAnElement(_to);
         }
     }
+
     function _mintAnElement(address _to) private {
+        uint id = _totalSupply();
+        require(id + 1 <= MAX_ELEMENTS, "Max limit has been reached");
+        _tokenIdTracker.increment();
+        _safeMint(_to, id);
+        emit CreateImpactToken(id);
+    }
+    
+    function mintAnElement(address _to) public payable allowedMinters {
         uint id = _totalSupply();
         _tokenIdTracker.increment();
         _safeMint(_to, id);

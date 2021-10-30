@@ -3,9 +3,10 @@ const hre = require("hardhat");
 async function main() {
   const tokenAddresses = ["0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa"];
   const baseTokenAddress = "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa";
+  const swapRouterAddress = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
 
   const ImpactPayment = await hre.ethers.getContractFactory("ImpactPayment");
-  const impactPayment = await ImpactPayment.deploy(tokenAddresses, baseTokenAddress);
+  const impactPayment = await ImpactPayment.deploy(tokenAddresses, baseTokenAddress, swapRouterAddress);
   await impactPayment.deployed();
   console.log("Impact Payment contract deployed to:", impactPayment.address);
 }
