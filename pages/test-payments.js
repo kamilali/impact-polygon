@@ -73,8 +73,31 @@ async function payDaiTest() {
     //     signedData.expiry, signedData.allowed, signedData.v, signedData.r, signedData.s);
     // let tx = await transaction.wait();
     
-    transaction = await paymentContract.depositFunds(daiTokenAddress, daiAmount);
+    transaction = await paymentContract.depositFunds(daiTokenAddress, daiAmount, 0);
     tx = await transaction.wait();
+}
+
+async function payETHTest() {
+    console.log("Testing ETH payments");
+    const expiry = Date.now() + 120;
+    const nonce = 1;
+    const spender = impactPaymentAddress;
+
+    const web3Modal = new Web3Modal();
+    const connection = await web3Modal.connect();
+    const provider = new ethers.providers.Web3Provider(connection);
+    const signer = provider.getSigner();
+    // const paymentContractSigned = new ethers.Contract(impactPaymentAddress, ImpactPayment.abi, signer);
+    // const paymasterContractSigned = new ethers.Contract(impactPaymasterAddress, ImpactPaymaster.abi, signer);
+    const fromAddress = await signer.getAddress();
+    console.log(fromAddress);
+
+    const paymentContract = new ethers.Contract(impactPaymentAddress, ImpactPayment.abi, signer);
+    
+    let ethAmount = ethers.utils.parseEther("0.01");
+    
+    let transaction = await paymentContract.depositFundsETH(0, {value: ethAmount});
+    let tx = await transaction.wait();
 }
 
 export const signTransferPermit = async function (fromAddress, expiry, nonce, spender) {
@@ -199,8 +222,12 @@ export default function TestPayments() {
         return (
             <div>
                 <div className="p-4">
-                    <h2 className="text-2xl py-2">Impact Payments Testing</h2>
+                    <h2 className="text-2xl py-2">Impact Payments Testing (DAI)</h2>
                     <button className="w-50 bg-pink-500 text-white font-bold py-2 px-12 rounded" onClick={() => payDaiTest()}>Pay in DAI</button>
+                </div>
+                <div className="p-4">
+                    <h2 className="text-2xl py-2">Impact Payments Testing (ETH)</h2>
+                    <button className="w-50 bg-pink-500 text-white font-bold py-2 px-12 rounded" onClick={() => payETHTest()}>Pay in ETH</button>
                 </div>
             </div>
         )

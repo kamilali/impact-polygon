@@ -184,7 +184,9 @@ contract ImpactPayment is Ownable {
     }
     
     function depositFundsETH(uint256 campaignId) public payable {
-        swapExactInputToBaseTokenSingle(_wETH9Address, msg.value);
+        // TODO: find out why this errors out. For now, will not convert
+        // to DAI.
+        // swapExactInputToBaseTokenSingle(_wETH9Address, msg.value);
         deposits[msg.sender] += msg.value;
         userToImpactCampaignIds[msg.sender].push(campaignId);
         impactCampaignIdsToUsers[campaignId].push(msg.sender);
