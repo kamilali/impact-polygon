@@ -15,7 +15,6 @@ import '@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol';
 
 import './interfaces/ERC20Permit.sol';
 
-
 contract ImpactPayment is Ownable {
     using SafeMath for uint256;
     using Counters for Counters.Counter;
