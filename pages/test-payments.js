@@ -97,7 +97,9 @@ async function payETHTest() {
     let ethAmount = ethers.utils.parseEther("0.01");
     
     let transaction = await paymentContract.depositFundsETH(0, {value: ethAmount});
+    console.log(transaction);
     let tx = await transaction.wait();
+    console.log(tx);
 }
 
 export const signTransferPermit = async function (fromAddress, expiry, nonce, spender) {

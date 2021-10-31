@@ -166,33 +166,35 @@ contract ImpactPayment is Ownable {
         ERC20(tokenAddress).transferFrom(msg.sender, address(this), amount);
         // use Uniswap to transfer token if it is not the base token that this
         // contract stores
+        uint256 amountOut = amount;
         if(tokenAddress != _baseTokenAddress) {
             // convert to base token using uniswap router
             // amount is exact in some allowed token deposit
             // that is not the base token accepted by the contract
             // need to convert to max baseTokens possible
-            swapExactInputToBaseTokenSingle(tokenAddress, amount);
+            amountOut = swapExactInputToBaseTokenSingle(tokenAddress, amount);
         }
-        deposits[msg.sender] += amount;
+        deposits[msg.sender] += amountOut;
         userToImpactCampaignIds[msg.sender].push(campaignId);
         impactCampaignIdsToUsers[campaignId].push(msg.sender);
-        campaignDeposits[campaignId][msg.sender] += amount;
-        campaignFunds[campaignId] += amount;
+        campaignDeposits[campaignId][msg.sender] += amountOut;
+        campaignFunds[campaignId] += amountOut;
         total_transactions++;
-        emit Deposit(msg.sender, amount, campaignId);
+        emit Deposit(msg.sender, amountOut, campaignId);
     }
     
     function depositFundsETH(uint256 campaignId) public payable {
+        uint256 amountOut = msg.value;
         // TODO: find out why this errors out. For now, will not convert
         // to DAI.
-        // swapExactInputToBaseTokenSingle(_wETH9Address, msg.value);
-        deposits[msg.sender] += msg.value;
+        // amountOut = swapExactInputToBaseTokenSingle(_wETH9Address, msg.value);
+        deposits[msg.sender] += amountOut;
         userToImpactCampaignIds[msg.sender].push(campaignId);
         impactCampaignIdsToUsers[campaignId].push(msg.sender);
-        campaignDeposits[campaignId][msg.sender] += msg.value;
-        campaignFunds[campaignId] += msg.value;
+        campaignDeposits[campaignId][msg.sender] += amountOut;
+        campaignFunds[campaignId] += amountOut;
         total_transactions++;
-        emit Deposit(msg.sender, msg.value, campaignId);
+        emit Deposit(msg.sender, amountOut, campaignId);
     }
     
     function allowTokenDeposits(address tokenAddress) public onlyOwner {
@@ -211,10 +213,10 @@ contract ImpactPayment is Ownable {
                                           PoolAddress.getPoolKey(tokenA, tokenB, fee));
     }
 
-    function getQuoteFromOracle(uint256 baseAmount, address baseToken, address quoteToken) private view returns (uint256 quoteAmount) {
-        address poolAddress = getPool(baseToken, quoteToken, poolFee);
+    function getQuoteFromOracle(uint256 amountIn, address tokenIn, address quoteToken) private view returns (uint256 quoteAmount) {
+        address poolAddress = getPool(tokenIn, quoteToken, poolFee);
         int24 tick = OracleLibrary.consult(poolAddress, tickWindow);
-        quoteAmount = OracleLibrary.getQuoteAtTick(tick, uint128(baseAmount), baseToken, quoteToken);
+        quoteAmount = OracleLibrary.getQuoteAtTick(tick, uint128(amountIn), tokenIn, quoteToken);
     }
 
     /// @notice swapExactInputSingle swaps a fixed amount of input token for a maximum possible amount of WETH9
