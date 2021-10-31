@@ -39,6 +39,7 @@ contract ImpactPayment is Ownable {
 
     mapping(address => bool) public tokens_allowed;
     address private _baseTokenAddress;
+    address private _wETH9Address;
     ISwapRouter private immutable swapRouter;
     uint24 private constant poolFee = 3000;
     uint32 private constant tickWindow = 100;
@@ -55,11 +56,12 @@ contract ImpactPayment is Ownable {
     event Deposit(address indexed sender, uint256 amount, uint256 campaignId);
     event Withdraw(address indexed recipient, uint256 amount, uint256 campaignId);
     
-    constructor(address[] memory tokenAddresses, address baseTokenAddress, address swapRouterAddress) {
+    constructor(address[] memory tokenAddresses, address baseTokenAddress, address wETH9Address, address swapRouterAddress) {
         for(uint256 i = 0; i < tokenAddresses.length; i++) {
             tokens_allowed[tokenAddresses[i]] = true;
         }
         _baseTokenAddress = baseTokenAddress;
+        _wETH9Address = wETH9Address;
         swapRouter = ISwapRouter(swapRouterAddress);
     }
     
@@ -179,6 +181,17 @@ contract ImpactPayment is Ownable {
         campaignFunds[campaignId] += amount;
         total_transactions++;
         emit Deposit(msg.sender, amount, campaignId);
+    }
+    
+    function depositFundsETH(uint256 campaignId) public payable {
+        swapExactInputToBaseTokenSingle(_wETH9Address, msg.value);
+        deposits[msg.sender] += msg.value;
+        userToImpactCampaignIds[msg.sender].push(campaignId);
+        impactCampaignIdsToUsers[campaignId].push(msg.sender);
+        campaignDeposits[campaignId][msg.sender] += msg.value;
+        campaignFunds[campaignId] += msg.value;
+        total_transactions++;
+        emit Deposit(msg.sender, msg.value, campaignId);
     }
     
     function allowTokenDeposits(address tokenAddress) public onlyOwner {
