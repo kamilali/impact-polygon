@@ -26,15 +26,19 @@ contract ImpactNFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausable 
     
     address private marketplaceContract;
     address private withdrawAllAddress;
+    mapping(address => bool) minters;
 
     event CreateImpactToken(uint256 indexed id);
     
-    constructor(string memory baseURI, string memory __hiddenURI, address _withdrawAllAddress, address _marketplaceContract) ERC721("ImpactNFT", "IMPACT") {
+    constructor(string memory baseURI, string memory __hiddenURI, address _withdrawAllAddress, address[] memory _minters, address _marketplaceContract) ERC721("ImpactNFT", "IMPACT") {
         _pause();
         setBaseURI(baseURI);
         setHiddenURI(__hiddenURI);
         setWithdrawAllAddress(_withdrawAllAddress);
         marketplaceContract = _marketplaceContract;
+        for(uint256 i = 0; i < _minters.length; i++) {
+            minters[_minters[i]] = true;
+        }
     }
 
     modifier saleIsOpen {
@@ -47,8 +51,12 @@ contract ImpactNFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausable 
     }
 
     modifier allowedMinters {
-        require(_msgSender() == owner() || _msgSender() == marketplaceContract);
+        require(_msgSender() == owner() || _msgSender() == marketplaceContract || minters[_msgSender()]);
         _;
+    }
+
+    function addMinter(address minter) public onlyOwner {
+        minters[minter] = true;
     }
 
     function _totalSupply() internal view returns (uint) {
