@@ -68,16 +68,16 @@ contract ImpactPayment is Ownable {
         return campaignFunds[campaignId];
     }
 
-    function getUserTotalDeposits() public view returns (uint256) {
-        return deposits[msg.sender];
+    function getUserTotalDeposits(address userAddress) public view returns (uint256) {
+        return deposits[userAddress];
     }
 
-    function getUserCampaignDeposits(uint256 campaignId) public view returns (uint256) {
-        return campaignDeposits[campaignId][msg.sender];
+    function getUserCampaignDeposits(uint256 campaignId, address userAddress) public view returns (uint256) {
+        return campaignDeposits[campaignId][userAddress];
     }
 
-    function getUserDonatedCampaigns() public view returns (ImpactCampaign[] memory) {
-        uint256[] memory userDonatedCampaignIds = userToImpactCampaignIds[msg.sender];
+    function getUserDonatedCampaigns(address userAddress) public view returns (ImpactCampaign[] memory) {
+        uint256[] memory userDonatedCampaignIds = userToImpactCampaignIds[userAddress];
         ImpactCampaign[] memory userDonatedCampaigns = new ImpactCampaign[](userDonatedCampaignIds.length);
         for(uint256 i = 0; i < userDonatedCampaignIds.length; i++) {
             userDonatedCampaigns[i] = idToImpactCampaign[userDonatedCampaignIds[i]];
