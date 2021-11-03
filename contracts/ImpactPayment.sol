@@ -178,10 +178,6 @@ contract ImpactPayment is Ownable {
         // contract stores
         uint256 amountOut = amount;
         if(tokenAddress != _baseTokenAddress) {
-            // convert to base token using uniswap router
-            // amount is exact in some allowed token deposit
-            // that is not the base token accepted by the contract
-            // need to convert to max baseTokens possible
             amountOut = swapExactInputToBaseTokenSingle(tokenAddress, amount);
         }
         deposits[msg.sender] += amountOut;
@@ -195,8 +191,6 @@ contract ImpactPayment is Ownable {
     
     function depositFundsETH(uint256 campaignId) public payable {
         uint256 amountOut = msg.value;
-        // TODO: find out why this errors out. For now, will not convert
-        // to DAI.
         // amountOut = swapExactInputToBaseTokenSingle(_wETH9Address, msg.value);
         deposits[msg.sender] += amountOut;
         userToImpactCampaignIds[msg.sender].push(campaignId);
