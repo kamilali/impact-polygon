@@ -1,4 +1,4 @@
-export const impactNFTAddress = "0x04EB531716cae5b4A8e1FDD750bb2A4c2dcDd600";
-export const impactMarketAddress = "0x6003e6e1dB878c09218736bC276FF315f1333B63";
-export const impactPaymentAddress = "0x29DAaD1d5041D103b3316314614861e81d622921";
+export const impactNFTAddress = "0xe9c66bc5c792e7b1350105A467E3e41F13FEc5f2";
+export const impactMarketAddress = "0x11F3A6AE739EA43B28e0b37E8424d296d52d07d6";
+export const impactPaymentAddress = "0x8daA74eDDAA661a0C1AB3c5B80175e6e3416Cbf2";
 export const impactPaymasterAddress = "0x5620992B3414e54d29E7Ed395dE8C16438FAe103";
