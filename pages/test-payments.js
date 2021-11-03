@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Web3Modal from "web3modal";
 const Web3 = require("web3");
-const { RelayProvider } = require('@opengsn/gsn');
 
 import { impactPaymentAddress, impactPaymasterAddress } from "../config";
 
@@ -79,9 +78,6 @@ async function payDaiTest() {
 
 async function payETHTest() {
     console.log("Testing ETH payments");
-    const expiry = Date.now() + 120;
-    const nonce = 1;
-    const spender = impactPaymentAddress;
 
     const web3Modal = new Web3Modal();
     const connection = await web3Modal.connect();
@@ -206,18 +202,49 @@ const createPermitMessageData = function (fromAddress, spender, nonce, expiry) {
 export default function TestPayments() {
 
     const [loadingState, setLoadingState] = useState(true);
+    const [totalFundsETH, setTotalFundsETH] = useState("");
+
     useEffect(() => {
+        setLoadingState(true);
         connectUser();
+        getTotalFundsDeposited(0);
+        setEventListenersForDeposits(0);
+        setLoadingState(false);
     }, []);
 
     async function connectUser() {
-        setLoadingState(true);
         const web3Modal = new Web3Modal();
         const connection = await web3Modal.connect();
         const provider = new ethers.providers.Web3Provider(connection);
         const signer = provider.getSigner();
         const signerAddress = await signer.getAddress();
-        setLoadingState(false);
+    }
+
+    async function getTotalFundsDeposited(campaignId) {
+        console.log("Testing ETH payments");
+
+        const web3Modal = new Web3Modal();
+        const connection = await web3Modal.connect();
+        const provider = new ethers.providers.Web3Provider(connection);
+
+        const paymentContract = new ethers.Contract(impactPaymentAddress, ImpactPayment.abi, provider);
+        
+        let totalFunds = await paymentContract.getCampaignFunds(campaignId);
+        let totalFundsETH = ethers.utils.formatEther(totalFunds.toString());
+        setTotalFundsETH(totalFundsETH);
+    }
+
+    async function setEventListenersForDeposits(listenCampaignId) {
+        const web3Modal = new Web3Modal();
+        const connection = await web3Modal.connect();
+        const provider = new ethers.providers.Web3Provider(connection);
+        const paymentContract = new ethers.Contract(impactPaymentAddress, ImpactPayment.abi, provider);
+        paymentContract.on("Deposit", (sender, amount, campaignId) => {
+            console.log("received deposit event", sender, amount, campaignId);
+            if (campaignId == listenCampaignId) {
+                getTotalFundsDeposited(campaignId);
+            }
+        })
     }
 
     if (!loadingState) {
@@ -230,6 +257,9 @@ export default function TestPayments() {
                 <div className="p-4">
                     <h2 className="text-2xl py-2">Impact Payments Testing (ETH)</h2>
                     <button className="w-50 bg-pink-500 text-white font-bold py-2 px-12 rounded" onClick={() => payETHTest()}>Pay in ETH</button>
+                </div>
+                <div className="p-4">
+                    <h2 className="text-xl py-2">Total Funds: {totalFundsETH} ETH</h2>
                 </div>
             </div>
         )
