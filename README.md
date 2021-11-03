@@ -7,7 +7,12 @@ npx hardhat node
 
 To deploy contracts (specify network):
 ```shell
-npx hardhat run scripts/deploy.js --network <network - e.g. localhost>
+npx hardhat run scripts/<deployment script> --network <network - e.g. localhost>
+```
+
+To verify contracts:
+```shell
+npx hardhat verify --network <network - e.g. kovan> --constructor-args etherscan-<args file suffix>.js <contract address>
 ```
 
 To run test app:
