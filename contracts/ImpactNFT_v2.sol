@@ -31,7 +31,7 @@ contract ImpactNFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausable 
     event CreateImpactToken(uint256 indexed id);
     
     constructor(string memory baseURI, string memory __hiddenURI, address _withdrawAllAddress, address[] memory _minters, address _marketplaceContract) ERC721("ImpactNFT", "IMPACT") {
-        _pause();
+        // _pause(); // pause during launch for better control
         setBaseURI(baseURI);
         setHiddenURI(__hiddenURI);
         setWithdrawAllAddress(_withdrawAllAddress);
@@ -130,8 +130,8 @@ contract ImpactNFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausable 
         isRevealed = false;
     }
 
-    function _isRevealed() public view returns(bool) {
-        return isRevealed;
+    function _isRevealed() public pure returns(bool) {
+        return true;
     }
 
     function walletOfOwner(address _owner) external view returns (uint256[] memory) {

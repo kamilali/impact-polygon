@@ -159,6 +159,16 @@ contract ImpactPayment is Ownable {
         emit Withdraw(campaignOwner, amount, campaignId);
     }
 
+    function withdrawFundsETH(uint256 campaignId, uint256 amount) public onlyOwner {
+        require(campaignFunds[campaignId] >= amount, 
+                "This campaign does not have sufficient funds for this withdrawal");
+        require(address(this).balance >= amount, 
+                "This campaign does not have sufficient ETH for this withdrawal");
+        address campaignOwner = idToImpactCampaign[campaignId].campaignOwner;
+        payable(campaignOwner).transfer(amount);
+        emit Withdraw(campaignOwner, amount, campaignId);
+    }
+
     function depositFunds(address tokenAddress, uint256 amount, uint256 campaignId) public {
         require(tokens_allowed[tokenAddress], "We do not accept deposits of this ERC20 token");
         require(ERC20(tokenAddress).balanceOf(msg.sender) >= amount, 
