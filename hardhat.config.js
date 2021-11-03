@@ -1,4 +1,6 @@
 require("@nomiclabs/hardhat-waffle");
+require("@nomiclabs/hardhat-etherscan");
+
 const fs = require("fs");
 const privateKey = fs.readFileSync(".secret").toString();
 const projectId = "959dde76f6ab4023870800531d390fc6";
@@ -28,6 +30,9 @@ module.exports = {
       url: `https://rinkeby.infura.io/v3/${projectId}`,
       accounts: [privateKey]
     }
+  },
+  etherscan: {
+    apiKey: "4JHKY445WD2PAADWD1VT6JQY2EVAYYUUH1"
   },
   solidity: {
     compilers: [

@@ -10,9 +10,8 @@
   },
   "dependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-etherscan": "^2.1.7",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
-    "@opengsn/contracts": "^2.2.2",
-    "@opengsn/gsn": "^2.1.0",
     "@opengsn/provider": "^2.2.2",
     "@openzeppelin/contracts": "^4.3.2",
     "@openzeppelin/network": "^0.4.3",
@@ -24,7 +23,6 @@
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.4.7",
     "fs": "^0.0.1-security",
-    "hardhat": "^2.6.4",
     "ipfs-http-client": "^50.1.2",
     "next": "11.1.2",
     "react": "17.0.2",
@@ -39,6 +37,7 @@
     "autoprefixer": "^10.3.6",
     "eslint": "7.32.0",
     "eslint-config-next": "11.1.2",
+    "hardhat": "^2.6.7",
     "postcss": "^8.3.8",
     "tailwindcss": "^2.2.16"
   }
