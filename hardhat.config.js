@@ -1,12 +1,13 @@
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-etherscan");
+require("hardhat-gas-reporter");
 
 const fs = require("fs");
 const privateKey = fs.readFileSync(".secret").toString();
 const projectId = "959dde76f6ab4023870800531d390fc6";
 
 module.exports = {
-  defaultNetwork: 'eth_mainnet',
+  // defaultNetwork: 'eth_mainnet',
   networks: {
     hardhat: {
       chainId: 1337
@@ -43,4 +44,7 @@ module.exports = {
       }
     ]
   },
+  gasReporter: {
+    enabled: true
+  }
 };

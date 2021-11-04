@@ -38,6 +38,7 @@
     "eslint": "7.32.0",
     "eslint-config-next": "11.1.2",
     "hardhat": "^2.6.7",
+    "hardhat-gas-reporter": "^1.0.4",
     "postcss": "^8.3.8",
     "tailwindcss": "^2.2.16"
   }
