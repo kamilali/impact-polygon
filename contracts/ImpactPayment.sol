@@ -77,9 +77,8 @@ contract ImpactPayment is Ownable {
     }
 
     function depositFundsETH(uint256 campaignId) public payable {
-        uint256 amountOut = msg.value;
-        campaignDeposits[campaignId][msg.sender] += amountOut;
-        campaignFunds[campaignId] += amountOut;
-        emit Deposit(msg.sender, amountOut, campaignId);
+        campaignDeposits[campaignId][msg.sender] += msg.value;
+        campaignFunds[campaignId] += msg.value;
+        emit Deposit(msg.sender, msg.value, campaignId);
     }
 }

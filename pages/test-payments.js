@@ -6,10 +6,11 @@ const Web3 = require("web3");
 
 import { impactPaymentAddress, impactPaymasterAddress } from "../config";
 
-import ImpactPayment from '../artifacts/contracts/ImpactPayment.sol/ImpactPayment.json';
+import ImpactPayment from '../artifacts/contracts/ImpactPayments.sol/ImpactPayments.json';
 // import ImpactPaymaster from '../artifacts/contracts/ImpactPaymaster.sol/ImpactPaymaster.json';
 
 const daiTokenAddress = "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa";
+const usdcTokenAddress = "0xc2569dd7d0fd715b054fbf16e75b001e5c0c1115";
 
 const WEB3_PROVIDER = 'https://kovan.infura.io/v3/959dde76f6ab4023870800531d390fc6';
 
@@ -21,14 +22,7 @@ const WEB3_PROVIDER = 'https://kovan.infura.io/v3/959dde76f6ab4023870800531d390f
 //     }
 // }
 
-const DaiABI = [
-  // Some details about the token
-  "function name() view returns (string)",
-  "function symbol() view returns (string)",
-
-  // Get the account balance
-  "function balanceOf(address) view returns (uint)",
-
+const ERC20ABI = [
   // approve function
   "function approve(address usr, uint wad) external returns (bool)",
 ]
@@ -63,7 +57,7 @@ async function payDaiTest() {
     let daiAmount = "100000000000000000";
 
     // approve dai (non-gasless)
-    const daiContract = new ethers.Contract(daiTokenAddress, DaiABI, signer);
+    const daiContract = new ethers.Contract(daiTokenAddress, ERC20ABI, signer);
     let transaction = await daiContract.approve(impactPaymentAddress, daiAmount);
     let tx = await transaction.wait();
 
@@ -72,8 +66,44 @@ async function payDaiTest() {
     //     signedData.expiry, signedData.allowed, signedData.v, signedData.r, signedData.s);
     // let tx = await transaction.wait();
     
-    transaction = await paymentContract.depositFunds(daiTokenAddress, daiAmount, 0);
+    transaction = await paymentContract.depositFunds(0, daiTokenAddress, daiAmount);
     tx = await transaction.wait();
+}
+
+async function payUSDCTest() {
+    console.log("Testing USDC payments");
+    const spender = impactPaymentAddress;
+
+    const web3Modal = new Web3Modal();
+    const connection = await web3Modal.connect();
+    const provider = new ethers.providers.Web3Provider(connection);
+    const signer = provider.getSigner();
+    // const paymentContractSigned = new ethers.Contract(impactPaymentAddress, ImpactPayment.abi, signer);
+    // const paymasterContractSigned = new ethers.Contract(impactPaymasterAddress, ImpactPaymaster.abi, signer);
+    const fromAddress = await signer.getAddress();
+    console.log(fromAddress);
+
+    // paymasterContractSigned._depositProceedsToHubPublic("100000000000000000");
+
+    // await paymentContract.methods.testContractFunction(100).send({ from: fromAddress });
+
+    // call permit to allow access for impact payment contract
+    // const gsnProvider = await RelayProvider.newProvider({ provider: window.ethereum, config }).init();
+    // let newProvider = new ethers.providers.Web3Provider(gsnProvider);
+    // let newSigner = newProvider.getSigner();
+    const paymentContract = new ethers.Contract(impactPaymentAddress, ImpactPayment.abi, signer);
+    
+    // var signedData = await signTransferPermit(fromAddress, expiry, nonce, spender);
+    // console.log(signedData);
+    let usdcAmount = "100000000000000000";
+
+    // approve usdc
+    const usdcContract = new ethers.Contract(usdcTokenAddress, ERC20ABI, signer);
+    let transaction = await usdcContract.approve(impactPaymentAddress, usdcAmount);
+    await transaction.wait();
+    
+    transaction = await paymentContract.depositFunds(0, usdcTokenAddress, usdcAmount);
+    await transaction.wait();
 }
 
 async function payETHTest() {
@@ -223,15 +253,15 @@ export default function TestPayments() {
     async function getTotalFundsDeposited(campaignId) {
         console.log("Testing ETH payments");
 
-        const web3Modal = new Web3Modal();
-        const connection = await web3Modal.connect();
-        const provider = new ethers.providers.Web3Provider(connection);
+        // const web3Modal = new Web3Modal();
+        // const connection = await web3Modal.connect();
+        // const provider = new ethers.providers.Web3Provider(connection);
 
-        const paymentContract = new ethers.Contract(impactPaymentAddress, ImpactPayment.abi, provider);
+        // const paymentContract = new ethers.Contract(impactPaymentAddress, ImpactPayment.abi, provider);
         
-        let totalFunds = await paymentContract.getCampaignFunds(campaignId);
-        let totalFundsETH = ethers.utils.formatEther(totalFunds.toString());
-        setTotalFundsETH(totalFundsETH);
+        // let totalFunds = await paymentContract.getCampaignFunds(campaignId);
+        // let totalFundsETH = ethers.utils.formatEther(totalFunds.toString());
+        // setTotalFundsETH(totalFundsETH);
     }
 
     async function setEventListenersForDeposits(listenCampaignId) {
@@ -255,12 +285,16 @@ export default function TestPayments() {
                     <button className="w-50 bg-pink-500 text-white font-bold py-2 px-12 rounded" onClick={() => payDaiTest()}>Pay in DAI</button>
                 </div>
                 <div className="p-4">
+                    <h2 className="text-2xl py-2">Impact Payments Testing (USDC)</h2>
+                    <button className="w-50 bg-pink-500 text-white font-bold py-2 px-12 rounded" onClick={() => payUSDCTest()}>Pay in USDC</button>
+                </div>
+                <div className="p-4">
                     <h2 className="text-2xl py-2">Impact Payments Testing (ETH)</h2>
                     <button className="w-50 bg-pink-500 text-white font-bold py-2 px-12 rounded" onClick={() => payETHTest()}>Pay in ETH</button>
                 </div>
-                <div className="p-4">
+                {/* <div className="p-4">
                     <h2 className="text-xl py-2">Total Funds: {totalFundsETH} ETH</h2>
-                </div>
+                </div> */}
             </div>
         )
     } else {
