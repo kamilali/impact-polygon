@@ -10,35 +10,32 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract ImpactNFTv3 is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausable {
+contract ImpactKAB_NFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausable {
     using SafeMath for uint256;
     using Counters for Counters.Counter;
     using Strings for uint256;
 
-    Counters.Counter private _tokenIdTracker;
+    Counters.Counter[] private _tokenIdTrackers;
 
-    struct CampaignNFT {
-        string[] identifiers; // identifier for specific NFTs in the campaign
-        mapping(string => uint256) requiredDonationAmounts; // Base donation mount required per mint
-        mapping(string => uint256) maxElements; // The max number of elements in the collection
-        mapping(string => uint256) maxByMints; // Max number of mints per transaction
-        mapping(string => string) baseTokenURIs; // Base token URI of collection.. should be ipfs://{HASH}/
-        mapping(string => string) hiddenTokenURIs; // Token URI of hidden object
-        mapping(string => bool) isRevealed; // Determines if the token is revealed
-    }
+    uint256 public constant DONOR_MAX_ELEMENTS = 200; // The max number of elements in the collection
+    uint256 public constant GM_MAX_ELEMENTS = 14;     // The max number of elements in the collection
+    uint256 public constant WAGMI_MAX_ELEMENTS = 5;   // The max number of elements in the collection
+    uint256 public constant DONOR_PRICE = 0.12 ether; // Base price per mint
+    uint256 public constant GM_PRICE = 0.6 ether;     // Base price per mint
+    uint256 public constant WAGMI_PRICE = 1 ether;    // Base price per mint
+    string public baseTokenURI;                       // Base token URI of collection.. should be ipfs://{HASH}/
+    string public hiddenURI;                          // Token URI of hidden object
+    bool public isRevealed = false;                   // Determines if the token is revealed
     
     address private marketplaceContract;
     address private withdrawAllAddress;
     mapping(address => bool) minters;
-    mapping(uint256 => CampaignNFT) campaignNFTs;
-    mapping(uint256 => Counters.Counter) tokenIdTrackers;
 
     event CreateImpactToken(uint256 indexed id);
-    event CampaignCreated(uint256 id);
     
-    constructor(address _withdrawAllAddress, address[] memory _minters, address _marketplaceContract) ERC721("ImpactNFT", "IMPACT") {
-        // setBaseURI(baseURI);
-        // setHiddenURI(__hiddenURI);
+    constructor(string memory baseURI, string memory __hiddenURI, address _withdrawAllAddress, address[] memory _minters, address _marketplaceContract) ERC721("ImpactNFT", "IMPACT") {
+        setBaseURI(baseURI);
+        setHiddenURI(__hiddenURI);
         setWithdrawAllAddress(_withdrawAllAddress);
         marketplaceContract = _marketplaceContract;
         for(uint256 i = 0; i < _minters.length; i++) {
@@ -51,64 +48,46 @@ contract ImpactNFTv3 is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausabl
         _;
     }
 
-    function addCampaignNFTs(uint256 campaignId,
-                             string[] memory identifiers, 
-                             uint256[] memory requiredDonationAmounts,
-                             uint256[] memory maxElements,
-                             uint256[] memory maxByMints,
-                             string[] memory baseTokenURIs,
-                             string[] memory hiddenTokenURIs,
-                             bool[] memory isRevealed) public onlyOwner {
-        // TODO: FIX this
-        campaignNFTs[campaignId].identifiers = identifiers;
-        for(uint256 i = 0; i < identifiers.length; i++) {
-            campaignNFTs[campaignId].requiredDonationAmounts[identifiers[i]] = requiredDonationAmounts[i];
-            campaignNFTs[campaignId].maxElements[identifiers[i]] = maxElements[i];
-            campaignNFTs[campaignId].maxByMints[identifiers[i]] = maxByMints[i];
-            campaignNFTs[campaignId].baseTokenURIs[identifiers[i]] = baseTokenURIs[i];
-            campaignNFTs[campaignId].hiddenTokenURIs[identifiers[i]] = hiddenTokenURIs[i];
-            campaignNFTs[campaignId].isRevealed[identifiers[i]] = isRevealed[i];
-        }
-        emit CampaignCreated(campaignId);
-    }
-
     function addMinter(address minter) public onlyOwner {
         minters[minter] = true;
     }
 
-    function _totalSupply(uint256 campaignId) internal view returns (uint) {
-        return tokenIdTrackers[campaignId].current();
+    function _totalSupply(uint256 i) internal view returns (uint) {
+        return _tokenIdTrackers[i].current();
     }
 
-    function mint(uint256 campaignId, string memory identifier, address _to, uint256 _count) public payable allowedMinters {
-
-        uint256 total = _totalSupply(campaignId);
-        require(total + _count <= campaignNFTs[campaignId].maxElements[identifier], "Max limit");
-        require(_count <= campaignNFTs[campaignId].maxByMints[identifier], "Exceeds number");
-        require(msg.value >= price(campaignId, identifier, _count), "Value below price");
-
-        for (uint256 i = 0; i < _count; i++) {
-            _mintAnElement(campaignId, identifier, _to);
+    function mint(address _to, uint256[] memory counts) public payable allowedMinters {
+        require(counts.length == 3, "Unable to mint NFTs");
+        for (uint256 i = 0; i < counts.length; i++) {
+            if (counts[i] > 0) {
+                uint256 offset = 0;
+                uint256 total = _totalSupply(i);
+                uint256 maxLimit = 0;
+                // select which token to mint
+                if (i == 0) { 
+                    maxLimit = DONOR_MAX_ELEMENTS; 
+                    offset = 0;
+                }
+                else if (i == 1) {
+                    maxLimit = GM_MAX_ELEMENTS;
+                    offset = DONOR_MAX_ELEMENTS;
+                }
+                else {
+                    maxLimit = WAGMI_MAX_ELEMENTS;
+                    offset = GM_MAX_ELEMENTS;
+                }
+                require(total + counts[i] <= maxLimit, "Max limit reached");
+                for (uint256 j = 0; j < counts[i]; j++) {
+                    _mintAnElement(_to, offset + total);
+                    _tokenIdTrackers[i].increment();
+                }
+            }
         }
     }
 
-    function _mintAnElement(uint256 campaignId, string memory identifier, address _to) private {
-        uint id = _totalSupply(campaignId);
-        require(id + 1 <= campaignNFTs[campaignId].maxElements[identifier], "Max limit has been reached");
-        _tokenIdTracker.increment();
+    function _mintAnElement(address _to, uint256 id) private {
         _safeMint(_to, id);
         emit CreateImpactToken(id);
-    }
-    
-    function mintAnElement(uint256 campaignId, string memory identifier, address _to) public payable allowedMinters {
-        uint id = _totalSupply(campaignId);
-        _tokenIdTracker.increment();
-        _safeMint(_to, id);
-        emit CreateImpactToken(id);
-    }
-
-    function price(uint256 campaignId, string memory identifier, uint256 _count) public pure returns (uint256) {
-        return campaignNFTs[campaignId].requiredDonationAmounts[identifier].mul(_count);
     }
 
     function mintUnique(address _to, uint256 id) public payable onlyOwner {
@@ -116,40 +95,40 @@ contract ImpactNFTv3 is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausabl
         emit CreateImpactToken(id);
     }
 
-    function _baseURI(uint256 campaignId, string memory identifier) internal view virtual override returns (string memory) {
-        return campaignNFTs[campaignId].baseTokenURIs[identifier];
+    function _baseURI() internal view virtual override returns (string memory) {
+        return baseTokenURI;
     }
 
-    function _hiddenURI(uint256 campaignId, string memory identifier) public view virtual returns (string memory) {
-        return campaignNFTs[campaignId].hiddenTokenURIs[identifier];
+    function _hiddenURI() public view virtual returns (string memory) {
+        return hiddenURI;
     }
 
-    function setBaseURI(uint256 campaignId, string memory identifier, string memory baseURI) public onlyOwner {
-        campaignNFTs[campaignId].baseTokenURIs[identifier] = baseURI;
+    function setBaseURI(string memory baseURI) public onlyOwner {
+        baseTokenURI = baseURI;
     }
 
-    function setHiddenURI(uint256 campaignId, string memory identifier, string memory __hiddenURI) public onlyOwner {
-        campaignNFTs[campaignId].hiddenTokenURIs[identifier] = __hiddenURI;
+    function setHiddenURI(string memory __hiddenURI) public onlyOwner {
+        hiddenURI = __hiddenURI;
     }
 
     function setWithdrawAllAddress(address withdrwAddr) public onlyOwner {
         withdrawAllAddress = withdrwAddr;
     }
 
-    function getHiddenURI(uint256 campaignId, string memory identifier) public view onlyOwner returns (string memory) {
-        return campaignNFTs[campaignId].hiddenTokenURIs[identifier];
+    function getHiddenURI() public view onlyOwner returns (string memory) {
+        return hiddenURI;
     }
 
-    function reveal(uint256 campaignId, string memory identifier) public onlyOwner {
-        campaignNFTs[campaignId].isRevealed[identifier] = true;
+    function reveal() public onlyOwner {
+        isRevealed = true;
     }
 
-    function hide(uint256 campaignId, string memory identifier) public onlyOwner {
-        campaignNFTs[campaignId].isRevealed[identifier] = false;
+    function hide() public onlyOwner {
+        isRevealed = false;
     }
 
-    function _isRevealed(uint256 campaignId, string memory identifier) public pure returns(bool) {
-        return campaignNFTs[campaignId].isRevealed[identifier];
+    function _isRevealed() public pure returns(bool) {
+        return true;
     }
 
     function walletOfOwner(address _owner) external view returns (uint256[] memory) {
@@ -163,11 +142,11 @@ contract ImpactNFTv3 is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausabl
         return tokensId;
     }
 
-    function tokenURI(uint256 campaignId, string memory identifier, uint256 tokenId) public view virtual override returns (string memory) {
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
 
-        if (!_isRevealed(campaignId, identifier)) {
-            return _hiddenURI(campaignId, identifier);
+        if (!_isRevealed()) {
+            return _hiddenURI();
         }
 
         return bytes(_baseURI()).length > 0
@@ -188,10 +167,10 @@ contract ImpactNFTv3 is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausabl
     function withdrawAll() public payable onlyOwner {
         uint256 balance = address(this).balance;
         require(balance > 0);
-        _withdraw(withdrawAllAddress, address(this).balance);
+        _widthdraw(withdrawAllAddress, address(this).balance);
     }
 
-    function _withdraw(address _address, uint256 _amount) private {
+    function _widthdraw(address _address, uint256 _amount) private {
         (bool success, ) = _address.call{value: _amount}("");
         require(success, "Transfer failed.");
     }
