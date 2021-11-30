@@ -57,7 +57,7 @@ contract ImpactKAB_NFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausa
     }
 
     function mint(address _to, uint256[] memory counts) public allowedMinters {
-        require(counts.length == 3, "Unable to mint NFTs");
+        require(counts.length == 3, "Improper counts length");
         for (uint256 i = 0; i < counts.length; i++) {
             if (counts[i] > 0) {
                 uint256 offset = 0;
@@ -113,6 +113,10 @@ contract ImpactKAB_NFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausa
 
     function setWithdrawAllAddress(address withdrwAddr) public onlyOwner {
         withdrawAllAddress = withdrwAddr;
+    }
+
+    function setMarketplaceContract(address _marketplaceContract) public onlyOwner {
+        marketplaceContract = _marketplaceContract;
     }
 
     function getHiddenURI() public view onlyOwner returns (string memory) {
