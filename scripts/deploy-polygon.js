@@ -10,7 +10,7 @@ async function main() {
   const withdrawAllAddress = minters[0];
   const baseTokenURI = "ipfs://QmQopLqopaEquC8ajy1zcstMVvi4ZEAz19s2EjnrwmDgqy/";
   const hiddenTokenURI = "";
-  const ImpactNFT = await hre.ethers.getContractFactory("ImpactNFT");
+  const ImpactNFT = await hre.ethers.getContractFactory("ImpactKAB_NFT");
   const impactNFT = await ImpactNFT.deploy(baseTokenURI, hiddenTokenURI, withdrawAllAddress, minters, impactMarket.address);
   await impactNFT.deployed();
   console.log("Impact NFT contract deployed to:", impactNFT.address);
