@@ -56,6 +56,17 @@ contract ImpactKAB_NFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausa
         return _tokenIdTrackers[i].current();
     }
 
+    function totalMinted(uint256 i) public view returns (uint256) {
+        return _tokenIdTrackers[i].current();
+    }
+    
+    function maxElements(uint256 i) public pure returns (uint256) {
+        require(i == 0 || i == 1 || i == 2);
+        if (i == 0) return DONOR_MAX_ELEMENTS;
+        else if (i == 1) return GM_MAX_ELEMENTS;
+        return WAGMI_MAX_ELEMENTS;
+    }
+
     function mint(address _to, uint256[] memory counts) public allowedMinters {
         require(counts.length == 3, "Improper counts length");
         for (uint256 i = 0; i < counts.length; i++) {
