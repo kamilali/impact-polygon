@@ -85,7 +85,7 @@ contract ImpactKAB_NFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausa
                 }
                 else {
                     maxLimit = WAGMI_MAX_ELEMENTS;
-                    offset = GM_MAX_ELEMENTS;
+                    offset = DONOR_MAX_ELEMENTS + GM_MAX_ELEMENTS;
                 }
                 require(total + counts[i] <= maxLimit, "Max limit reached");
                 for (uint256 j = 0; j < counts[i]; j++) {
