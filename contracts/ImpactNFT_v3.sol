@@ -15,7 +15,7 @@ contract ImpactKAB_NFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausa
     using Counters for Counters.Counter;
     using Strings for uint256;
 
-    Counters.Counter[] private _tokenIdTrackers;
+    Counters.Counter[3] private _tokenIdTrackers;
 
     uint256 public constant DONOR_MAX_ELEMENTS = 200; // The max number of elements in the collection
     uint256 public constant GM_MAX_ELEMENTS = 14;     // The max number of elements in the collection
