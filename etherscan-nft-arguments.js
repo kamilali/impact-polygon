@@ -3,5 +3,5 @@ module.exports = [
     "",
     "0x54b17b76260Da5dB8A62B6E70A09d086050C7C13",
     ["0x54b17b76260Da5dB8A62B6E70A09d086050C7C13"],
-    "0xCADfBE4Ad3395cd5e83fBc9DAeB2EeE8a1dF91D6" // change this based on market address
+    "0x8D19dCdb998C4c87f36A44650162312cCdA0d5d3" // change this based on market address
 ];
