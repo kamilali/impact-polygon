@@ -17,12 +17,12 @@ contract ImpactKAB_NFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausa
 
     Counters.Counter[3] private _tokenIdTrackers;
 
-    uint256 public constant DONOR_MAX_ELEMENTS = 200; // The max number of elements in the collection
-    uint256 public constant GM_MAX_ELEMENTS = 14;     // The max number of elements in the collection
-    uint256 public constant WAGMI_MAX_ELEMENTS = 5;   // The max number of elements in the collection
-    uint256 public constant DONOR_PRICE = 0.12 ether; // Base price per mint
-    uint256 public constant GM_PRICE = 0.6 ether;     // Base price per mint
-    uint256 public constant WAGMI_PRICE = 1 ether;    // Base price per mint
+    uint256 public DONOR_MAX_ELEMENTS = 200; // The max number of elements in the collection
+    uint256 public GM_MAX_ELEMENTS = 14;     // The max number of elements in the collection
+    uint256 public WAGMI_MAX_ELEMENTS = 5;   // The max number of elements in the collection
+    uint256 public DONOR_PRICE = 0.12 ether; // Base price per mint
+    uint256 public GM_PRICE = 0.6 ether;     // Base price per mint
+    uint256 public WAGMI_PRICE = 1 ether;    // Base price per mint
     string public baseTokenURI;                       // Base token URI of collection.. should be ipfs://{HASH}/
     string public hiddenURI;                          // Token URI of hidden object
     bool public isRevealed = false;                   // Determines if the token is revealed
@@ -60,7 +60,7 @@ contract ImpactKAB_NFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausa
         return _tokenIdTrackers[i].current();
     }
     
-    function maxElements(uint256 i) public pure returns (uint256) {
+    function maxElements(uint256 i) public view returns (uint256) {
         require(i == 0 || i == 1 || i == 2);
         if (i == 0) return DONOR_MAX_ELEMENTS;
         else if (i == 1) return GM_MAX_ELEMENTS;
@@ -196,5 +196,53 @@ contract ImpactKAB_NFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausa
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721, ERC721Enumerable) returns (bool) {
         return super.supportsInterface(interfaceId);
+    }
+
+    function getDonorMaxElements() public view returns (uint256) {
+        return DONOR_MAX_ELEMENTS;
+    }
+
+    function getGmMaxElements() public view returns (uint256) {
+        return GM_MAX_ELEMENTS;
+    }
+
+    function getWagmiMaxElements() public view returns (uint256) {
+        return WAGMI_MAX_ELEMENTS;
+    }
+    
+    function getDonorPrice() public view returns (uint256) {
+        return DONOR_PRICE;
+    }
+
+    function getGmPrice() public view returns (uint256) {
+        return GM_PRICE;
+    }
+
+    function getWagmiPrice() public view returns (uint256) {
+        return WAGMI_PRICE;
+    }
+
+    function setDonorMaxElements(uint256 newMax) public onlyOwner {
+        DONOR_MAX_ELEMENTS = newMax;
+    }
+
+    function setGmMaxElements(uint256 newMax) public onlyOwner {
+        GM_MAX_ELEMENTS = newMax;
+    }
+
+    function setWagmiMaxElements(uint256 newMax) public onlyOwner {
+        WAGMI_MAX_ELEMENTS = newMax;
+    }
+
+    function setDonorPrice(uint256 newPrice) public onlyOwner {
+        DONOR_PRICE = newPrice;
+    }
+    
+    function setGmPrice(uint256 newPrice) public onlyOwner {
+        GM_PRICE = newPrice;
+    }
+
+    function setWagmiPrice(uint256 newPrice) public onlyOwner {
+        WAGMI_PRICE = newPrice;
     }
 }
