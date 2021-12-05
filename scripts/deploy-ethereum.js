@@ -2,7 +2,7 @@ const hre = require("hardhat");
 
 async function main() {
   const ImpactPayments = await hre.ethers.getContractFactory("ImpactPayments");
-  const impactPayments = await ImpactPayments.deploy(["0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa", "0xc2569dd7d0fd715b054fbf16e75b001e5c0c1115"]);
+  const impactPayments = await ImpactPayments.deploy([]);
   await impactPayments.deployed();
   console.log("Impact Payment contract deployed to:", impactPayments.address);
 }

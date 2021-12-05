@@ -34,8 +34,8 @@ module.exports = {
     }
   },
   etherscan: {
-    // apiKey: "4JHKY445WD2PAADWD1VT6JQY2EVAYYUUH1"
-    apiKey: "KPZPXPMZVCWPHFP5XHICQ7MM38KCPNXK9Y"
+    apiKey: "4JHKY445WD2PAADWD1VT6JQY2EVAYYUUH1"
+    // apiKey: "KPZPXPMZVCWPHFP5XHICQ7MM38KCPNXK9Y"
   },
   solidity: {
     compilers: [
