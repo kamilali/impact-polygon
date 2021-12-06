@@ -33,7 +33,7 @@ contract ImpactKAB_NFT is ERC721Enumerable, Ownable, ERC721Burnable, ERC721Pausa
 
     event CreateImpactToken(uint256 indexed id);
     
-    constructor(string memory baseURI, string memory __hiddenURI, address _withdrawAllAddress, address[] memory _minters, address _marketplaceContract) ERC721("ImpactNFT", "IMPACT") {
+    constructor(string memory baseURI, string memory __hiddenURI, address _withdrawAllAddress, address[] memory _minters, address _marketplaceContract) ERC721("ImpactxKAB", "IMPACTKAB") {
         setBaseURI(baseURI);
         setHiddenURI(__hiddenURI);
         setWithdrawAllAddress(_withdrawAllAddress);
